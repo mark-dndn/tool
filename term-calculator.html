@@ -1,0 +1,1285 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>役員任期算定シミュレーター でんでん印</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-navy: #1e3a8a;
+            --primary-dark: #172554;
+            --accent-gold: #d97706;
+            --bg-light: #f8fafc;
+            --text-main: #0f172a;
+            --border-color: #cbd5e1;
+            --alert-bg: #fee2e2;
+        }
+        body { font-family: 'Noto Sans JP', sans-serif; background-color: var(--bg-light); color: var(--text-main); margin: 0; padding: 20px; min-height: 100vh; }
+        h1, h2, h3, th { font-family: 'Noto Serif JP', serif; }
+        .container { max-width: 1080px; margin: 0 auto; background: white; border-top: 5px solid var(--primary-navy); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); padding: 2rem; }
+        header { display: flex; align-items: center; border-bottom: 2px solid var(--primary-navy); padding-bottom: 1.5rem; margin-bottom: 1.5rem; }
+        .turtle-icon { width: 50px; height: 50px; margin-right: 15px; flex-shrink: 0; }
+        h1 { font-size: 1.8rem; color: var(--primary-navy); margin: 0; display: flex; align-items: baseline; gap: 10px; }
+
+        /* ===== [改善4] 会社名入力エリア ===== */
+        .company-name-area {
+            background: #f0fdf4; border: 2px solid #bbf7d0; border-radius: 8px;
+            padding: 0.8rem 1.5rem; margin-bottom: 1.5rem;
+            display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
+        }
+        .company-name-area > label { color: #166534; font-weight: 700; white-space: nowrap; margin: 0; font-size: 0.9rem; }
+        #company-name { flex: 1; min-width: 200px; font-size: 1rem; padding: 7px 12px; border: 1px solid #86efac; border-radius: 4px; font-family: inherit; }
+
+        .entity-selector-area { background: #eff6ff; border: 2px solid #bfdbfe; border-radius: 8px; padding: 1.5rem; margin-bottom: 1.5rem; }
+        .entity-selector-label { display: block; margin-bottom: 0.5rem; font-weight: 700; color: var(--primary-navy); font-size: 1.1rem; }
+        .entity-select { width: 100%; padding: 12px; font-size: 1.1rem; border: 2px solid var(--primary-navy); border-radius: 6px; color: var(--primary-dark); background: white; cursor: pointer; font-family: inherit; }
+        .sub-settings { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px dashed var(--border-color); }
+        .form-group { display: flex; flex-direction: column; }
+        label { font-size: 0.9rem; font-weight: 700; color: var(--primary-navy); margin-bottom: 0.5rem; }
+        select, input[type="text"], input[type="date"], input[type="number"] { padding: 8px 12px; border: 1px solid var(--border-color); border-radius: 4px; font-size: 0.95rem; font-family: inherit; }
+
+        .wareki-group { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; }
+        .wareki-group select, .wareki-group input { padding: 4px 2px; font-size: 0.88rem; text-align: center; }
+        .wareki-era { width: 60px; } .wareki-year { width: 45px; }
+        .wareki-month, .wareki-day { width: 45px; }
+        .unit-label { font-size: 0.8rem; font-weight: bold; color: var(--primary-navy); }
+
+        /* ===== [改善2] 日付バリデーション ===== */
+        .date-error-msg { color: #dc2626; font-size: 0.72rem; font-weight: bold; margin-top: 3px; display: none; }
+        .date-error-msg.visible { display: block; }
+        .wareki-group.has-error > select,
+        .wareki-group.has-error > input { border-color: #dc2626 !important; background: #fff1f2 !important; }
+
+        /* ===== [改善3] 補欠ラベル ===== */
+        .hoketsu-label {
+            font-size: 0.72rem; color: #b45309; background: #fffbeb;
+            border: 1px solid #fde68a; padding: 2px 6px; border-radius: 3px;
+            font-weight: bold; margin-bottom: 4px; display: none;
+        }
+        .hoketsu-label.visible { display: block; }
+
+        .table-responsive { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; margin-bottom: 1.5rem; }
+        thead th { background: var(--primary-navy); color: white; padding: 10px 8px; white-space: nowrap; text-align: left; }
+        tbody td { padding: 9px 8px; border-bottom: 1px solid var(--border-color); vertical-align: middle; }
+
+        .actions { display: flex; justify-content: flex-end; margin-bottom: 1rem; gap: 0.6rem; flex-wrap: wrap; }
+        .btn { border: none; padding: 9px 16px; border-radius: 4px; font-weight: bold; cursor: pointer; transition: all 0.2s; font-family: inherit; display: inline-flex; align-items: center; gap: 6px; font-size: 0.88rem; }
+        .btn-navy { background: var(--primary-navy); color: white; }
+        .btn-navy:hover { background: var(--primary-dark); }
+        .btn-outline { background: white; border: 1px solid var(--primary-navy); color: var(--primary-navy); }
+        .btn-outline:hover { background: #eff6ff; }
+        .btn-gold { background: var(--accent-gold); color: white; }
+        .btn-gold:hover { background: #b45309; }
+        .btn-print { background: #0f766e; color: white; }
+        .btn-print:hover { background: #0d5f59; }
+
+        .row-expired { background-color: #fee2e2 !important; }
+        .row-pending { background-color: #ffedd5 !important; }
+        .row-warning { background-color: #fef3c7 !important; }
+        .status-note { font-size: 0.76rem; margin-top: 4px; line-height: 1.5; }
+        .status-note .deadline-line { color: #1e3a8a; }
+        .status-note .status-line { font-weight: 700; }
+        .status-overdue { color: #b91c1c; }
+        .status-pending { color: #c2410c; }
+        .status-warning { color: #92400e; }
+        .substitute-warn { color: #dc2626; font-size: 0.75rem; margin-top: 3px; font-weight: bold; display: none; }
+
+        /* 役職セル */
+        .role-select { width: 100%; padding: 5px 3px; font-size: 0.85rem; border: 1px solid var(--border-color); border-radius: 4px; font-family: inherit; }
+        /* [改善3] 監査役制限バッジ */
+        .term-locked-badge { font-size: 0.7rem; color: #1e40af; background: #dbeafe; padding: 1px 5px; border-radius: 3px; margin-top: 3px; display: none; }
+        .term-locked-badge.visible { display: block; }
+        .term-custom-wrap { display: none; margin-top: 6px; }
+        .term-custom-wrap.visible { display: block; }
+        .term-custom-input { width: 90px; }
+        .settings-note { font-size: 0.78rem; color: #475569; margin-top: 0.4rem; }
+
+        /* 印刷用値（通常時非表示） */
+        .print-val { display: none; }
+        /* 印刷専用ヘッダー（通常時非表示） */
+        .print-only { display: none; }
+
+        .accordion { margin-top: 2rem; border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden; }
+        .accordion-header { background: #f1f5f9; padding: 1rem 1.5rem; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-weight: bold; color: var(--primary-navy); transition: background 0.2s; }
+        .accordion-header:hover { background: #e2e8f0; }
+        .accordion-content { display: none; padding: 1.5rem; background: white; }
+        .accordion-content.active { display: block; }
+        .ref-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+        .ref-table th, .ref-table td { border: 1px solid var(--border-color); padding: 7px 10px; }
+        .ref-table th { background: #f8fafc; color: var(--primary-navy); }
+
+        /* ===== [改善1] 免責事項 ===== */
+        .disclaimer-footer {
+            margin-top: 2rem; padding: 1rem 1.5rem;
+            background: #fffbeb; border: 1px solid #fde68a;
+            border-left: 4px solid var(--accent-gold);
+            border-radius: 0 8px 8px 0; font-size: 0.8rem;
+            color: #78350f; line-height: 1.9;
+        }
+        .disclaimer-footer h4 { margin: 0 0 0.4rem; color: #92400e; font-size: 0.88rem; font-family: 'Noto Serif JP', serif; }
+
+        /* ===== [改善4] 印刷専用スタイル ===== */
+        @media print {
+            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+            body { padding: 0; margin: 0; background: white; font-size: 9pt; }
+            .container { max-width: 100%; box-shadow: none; border-top: 3pt solid #1e3a8a; padding: 0.6cm 0.8cm; margin: 0; }
+
+            /* 非表示 */
+            .no-print { display: none !important; }
+
+            /* 印刷専用ヘッダー表示 */
+            .print-only { display: block !important; }
+            header .turtle-icon { display: none; }
+            header h1 { font-size: 12pt; }
+
+            /* テーブル調整 */
+            table { font-size: 8.5pt; page-break-inside: auto; margin-bottom: 0; }
+            tr { page-break-inside: avoid; }
+            thead th { background: #1e3a8a !important; color: white !important; padding: 5pt 5pt; font-size: 8pt; }
+            tbody td { padding: 4pt 5pt; border-bottom: 0.5pt solid #cbd5e1; }
+
+            /* インタラクティブ要素を非表示 */
+            input, select, button { display: none !important; }
+            .term-locked-badge { display: none !important; }
+            .substitute-warn { display: none !important; }
+            .hoketsu-label { display: none !important; }
+            .date-error-msg { display: none !important; }
+
+            /* 印刷用値を表示 */
+            .print-val { display: inline !important; font-size: 8.5pt; }
+
+            /* AGM表示は通常表示 */
+            .agm-display { display: block !important; font-size: 8pt !important; color: #1e3a8a !important; margin-top: 2pt !important; }
+            .no-term-msg { display: inline !important; font-size: 8pt !important; }
+            .row-expired td { background: #fee2e2 !important; }
+            .row-pending td { background: #ffedd5 !important; }
+            .row-warning td { background: #fef3c7 !important; }
+
+            /* 免責事項（印刷時も表示） */
+            .disclaimer-footer { margin-top: 0.4cm; font-size: 7pt; padding: 0.3cm 0.5cm; border: 0.5pt solid #fde68a; page-break-before: auto; }
+            .disclaimer-footer h4 { font-size: 7.5pt; margin-bottom: 2pt; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <header>
+        <svg class="turtle-icon" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="50" cy="50" r="30" fill="#1e3a8a" stroke="#d97706" stroke-width="3"/>
+            <path d="M50 30 L65 40 L65 60 L50 70 L35 60 L35 40 Z" fill="#172554" stroke="#d97706" stroke-width="2"/>
+            <path d="M50 30 L50 70 M35 40 L65 40 M35 60 L65 60" stroke="#d97706" stroke-width="2" stroke-linecap="round"/>
+            <circle cx="50" cy="18" r="14" fill="#1e3a8a" stroke="#d97706" stroke-width="3"/>
+            <circle cx="44" cy="16" r="2" fill="#d97706"/><circle cx="56" cy="16" r="2" fill="#d97706"/>
+            <path d="M22 35 Q10 20 25 15 Q30 25 22 35" fill="#1e3a8a" stroke="#d97706" stroke-width="3"/>
+            <path d="M78 35 Q90 20 75 15 Q70 25 78 35" fill="#1e3a8a" stroke="#d97706" stroke-width="3"/>
+        </svg>
+        <h1>役員任期算定シミュレーター <span style="font-size:0.6em;margin-left:10px;color:var(--accent-gold);">でんでん印</span></h1>
+    </header>
+
+    <!-- ===== [改善4] 印刷専用ヘッダー ===== -->
+    <div class="print-only" style="margin-bottom:0.7rem;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2pt solid #1e3a8a;padding-bottom:0.25cm;">
+            <div>
+                <div style="font-size:12pt;font-weight:bold;font-family:'Noto Serif JP',serif;color:#1e3a8a;" id="print-company-name">役員任期一覧</div>
+                <div style="font-size:8pt;color:#475569;margin-top:2pt;" id="print-entity-name"></div>
+            </div>
+            <div style="font-size:8pt;color:#475569;text-align:right;">
+                <div>作成日：<span id="print-date"></span></div>
+                <div style="margin-top:2pt;font-size:7pt;">でんでん印 役員任期算定シミュレーター</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== [改善4] 会社名入力 ===== -->
+    <div class="company-name-area no-print">
+        <label>🏢 会社名・法人名</label>
+        <input type="text" id="company-name" placeholder="例: 株式会社でんでん（印刷時ヘッダーに反映）">
+    </div>
+
+    <!-- 法人種別選択 -->
+    <div class="entity-selector-area no-print">
+        <label class="entity-selector-label">対象法人の種類を選択</label>
+        <select id="entity-type" class="entity-select" onchange="onEntityChanged()">
+            <option value="kk_non_public" selected>株式会社（非公開会社）</option>
+            <option value="kk_public">株式会社（公開会社）</option>
+            <option value="tokurei_yugen">特例有限会社</option>
+            <option value="godo">合同会社</option>
+            <option value="general_assoc">一般社団法人</option>
+            <option value="general_foundation">一般財団法人</option>
+            <option value="social_welfare">社会福祉法人</option>
+            <option value="medical">医療法人</option>
+        </select>
+        <div class="sub-settings">
+            <div class="form-group">
+                <label id="fy-month-label">決算月（事業年度末）</label>
+                <select id="fy-month" onchange="recalculateAll()"></select>
+            </div>
+            <div class="form-group">
+                <label id="agm-period-label">定時総会の開催期限</label>
+                <select id="agm-period" onchange="recalculateAll()">
+                    <option value="2">決算日から2ヶ月以内</option>
+                    <option value="3" selected>決算日から3ヶ月以内</option>
+                </select>
+            </div>
+        </div>
+        <div class="settings-note" id="term-mode-note"></div>
+    </div>
+
+    <!-- アクション -->
+    <div class="actions no-print">
+        <button class="btn btn-navy" onclick="addOfficerRow()">＋ 役員を追加</button>
+        <button class="btn btn-outline" onclick="downloadCSV()">💾 CSV保存</button>
+        <input type="file" id="csvInput" accept=".csv" style="display:none" onchange="importCSV(this)">
+        <button class="btn btn-gold" onclick="document.getElementById('csvInput').click()">📂 CSV読込</button>
+        <button class="btn btn-print" onclick="printTable()">🖨️ 印刷</button>
+    </div>
+
+    <!-- テーブル -->
+    <div class="table-responsive">
+        <table id="officer-table">
+            <thead>
+                <tr>
+                    <th style="width:105px;">役職</th>
+                    <th style="width:115px;">氏名</th>
+                    <th style="width:265px;">選任年月日（和暦）</th>
+                    <th style="width:145px;">任期設定</th>
+                    <th style="width:90px;">選任事由</th>
+                    <th>任期満了予定・登記申請期限</th>
+                    <th class="no-print" style="width:50px;"></th>
+                </tr>
+            </thead>
+            <tbody id="officer-tbody"></tbody>
+        </table>
+    </div>
+
+    <!-- 参考早見表 -->
+    <div class="accordion no-print">
+        <div class="accordion-header" onclick="toggleAccordion(this)">
+            <span>【参考】法人別・役員任期ルール早見表</span>
+            <span>▼</span>
+        </div>
+        <div class="accordion-content">
+            <table class="ref-table">
+                <thead>
+                    <tr>
+                        <th>法人区分</th><th>役員</th><th>原則任期</th><th>伸長・短縮</th><th>登記申請期限の目安</th><th>備考</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td rowspan="2"><strong>株式会社</strong></td>
+                        <td>取締役</td><td>2年</td><td>非公開会社は10年まで伸長可</td><td>変更日から2週間</td><td>終期は最終事業年度の定時株主総会終結時</td>
+                    </tr>
+                    <tr>
+                        <td>監査役</td><td>4年</td><td>非公開会社は10年まで伸長可／短縮不可</td><td>変更日から2週間</td><td>「最大10年」ではなく、最終事業年度の定時株主総会終結時まで</td>
+                    </tr>
+                    <tr>
+                        <td><strong>特例有限会社</strong></td><td>取締役・監査役</td><td>法定任期なし</td><td>-</td><td>変更日から2週間を目安</td><td>就任・退任等の変更時は別途登記要否を確認</td>
+                    </tr>
+                    <tr>
+                        <td><strong>合同会社</strong></td><td>社員・業務執行社員</td><td>法定任期なし</td><td>-</td><td>変更日から2週間を目安</td><td>代表社員・業務執行社員の変更管理向き</td>
+                    </tr>
+                    <tr>
+                        <td rowspan="2"><strong>一般社団法人</strong></td>
+                        <td>理事</td><td>2年</td><td>短縮可／終結時まで伸長あり</td><td>変更日から2週間を目安</td><td>終期は定時社員総会終結時</td>
+                    </tr>
+                    <tr>
+                        <td>監事</td><td>4年</td><td>定款で2年まで短縮可／終結時まで伸長あり</td><td>変更日から2週間を目安</td><td>監事のみ任期管理が重いので注意</td>
+                    </tr>
+                    <tr>
+                        <td rowspan="3"><strong>一般財団法人</strong></td>
+                        <td>理事</td><td>2年</td><td>短縮可／終結時まで伸長あり</td><td>変更日から2週間を目安</td><td>終期は定時評議員会終結時</td>
+                    </tr>
+                    <tr>
+                        <td>監事</td><td>4年</td><td>定款で2年まで短縮可／終結時まで伸長あり</td><td>変更日から2週間を目安</td><td>終期は定時評議員会終結時</td>
+                    </tr>
+                    <tr>
+                        <td>評議員</td><td>4年</td><td>短縮不可／終結時まで伸長あり</td><td>変更日から2週間を目安</td><td>条文の確認は特に重要</td>
+                    </tr>
+                    <tr>
+                        <td rowspan="3"><strong>社会福祉法人</strong></td>
+                        <td>理事</td><td>2年</td><td>短縮可／定時評議員会終結時まで</td><td>変更日から2週間を目安</td><td>暦上満了ではなく定時評議員会終結時ベース</td>
+                    </tr>
+                    <tr>
+                        <td>監事</td><td>2年</td><td>短縮可／定時評議員会終結時まで</td><td>変更日から2週間を目安</td><td>監事行を追加</td>
+                    </tr>
+                    <tr>
+                        <td>評議員</td><td>4年</td><td>定款で6年まで伸長可／定時評議員会終結時まで</td><td>変更日から2週間を目安</td><td>6年は定款規定が必要</td>
+                    </tr>
+                    <tr>
+                        <td rowspan="2"><strong>医療法人</strong></td>
+                        <td>理事</td><td>2年以内</td><td>法定上限2年</td><td>変更日から2週間を目安</td><td>役員任期は2年を超えることができない</td>
+                    </tr>
+                    <tr>
+                        <td>監事</td><td>2年以内</td><td>法定上限2年</td><td>変更日から2週間を目安</td><td>監事行を追加</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ===== [改善1] 免責事項 ===== -->
+    <div class="disclaimer-footer">
+        <h4>⚠ 免責事項・ご利用上の注意（必ずお読みください）</h4>
+        本ツールの計算結果は、一般的な法定任期規定（会社法、一般法人法、社会福祉法、医療法等）に基づく<strong>参考情報</strong>です。
+        実際の任期は<strong>定款の定め</strong>（任期の起算点・別段の定め・補欠役員に関する規定等）によって大きく異なる場合があります。
+        本ツールの利用前に必ず<strong>定款をご確認</strong>ください。
+        本ツールの利用により生じた損害（過料・登記懈怠等を含む）について、作成者は一切の責任を負いません。
+    </div>
+</div>
+
+<script>
+// ===== データ定義 =====
+
+var ENTITY_CONFIG = {
+    'kk_non_public': {
+        name: '株式会社（非公開会社）', hasTerm: true, termMode: 'agm',
+        terms: [
+            { val: 10, label: '10年（定款伸長・取締役）' },
+            { val: 2,  label: '2年（取締役）' },
+            { val: 0,  label: 'カスタム入力' }
+        ],
+        defaultTerm: 10
+    },
+    'kk_public': {
+        name: '株式会社（公開会社）', hasTerm: true, termMode: 'agm',
+        terms: [
+            { val: 2, label: '2年（取締役）' },
+            { val: 1, label: '1年（定款短縮・取締役）' },
+            { val: 0, label: 'カスタム入力' }
+        ],
+        defaultTerm: 2
+    },
+    'tokurei_yugen': { name: '特例有限会社', hasTerm: false, termMode: 'none', terms: [], defaultTerm: 0 },
+    'godo': { name: '合同会社', hasTerm: false, termMode: 'none', terms: [], defaultTerm: 0 },
+    'general_assoc': {
+        name: '一般社団法人', hasTerm: true, termMode: 'agm',
+        terms: [
+            { val: 2, label: '2年（理事）' },
+            { val: 1, label: '1年（理事・短縮例）' },
+            { val: 0, label: 'カスタム入力' }
+        ],
+        defaultTerm: 2
+    },
+    'general_foundation': {
+        name: '一般財団法人', hasTerm: true, termMode: 'agm',
+        terms: [
+            { val: 2, label: '2年（理事）' },
+            { val: 0, label: 'カスタム入力' }
+        ],
+        defaultTerm: 2
+    },
+    'social_welfare': {
+        name: '社会福祉法人', hasTerm: true, termMode: 'agm',
+        terms: [
+            { val: 2, label: '2年（理事・監事）' },
+            { val: 4, label: '4年（評議員）' },
+            { val: 6, label: '6年（評議員・定款伸長）' },
+            { val: 0, label: 'カスタム入力' }
+        ],
+        defaultTerm: 2
+    },
+    'medical': {
+        name: '医療法人', hasTerm: true, termMode: 'calendar',
+        terms: [
+            { val: 2, label: '2年（役員）' },
+            { val: 0, label: 'カスタム入力' }
+        ],
+        defaultTerm: 2
+    }
+};
+
+// 法人種別ごとの役職選択肢
+var ROLE_OPTIONS = {
+    'kk_non_public':      ['代表取締役', '取締役', '監査役', '会計参与', 'その他'],
+    'kk_public':          ['代表取締役', '取締役', '監査役', '会計参与', 'その他'],
+    'tokurei_yugen':      ['代表取締役', '取締役', '監査役', 'その他'],
+    'godo':               ['代表社員', '業務執行社員', '社員', 'その他'],
+    'general_assoc':      ['代表理事', '理事', '監事', 'その他'],
+    'general_foundation': ['代表理事', '理事', '監事', '評議員', 'その他'],
+    'social_welfare':     ['理事長', '理事', '監事', '評議員', 'その他'],
+    'medical':            ['理事長', '理事', '監事', 'その他']
+};
+
+function getTermMode(entityKey) {
+    var config = ENTITY_CONFIG[entityKey];
+    return config ? config.termMode : 'agm';
+}
+
+function getRecommendedAgmPeriod(entityKey) {
+    if (entityKey === 'general_assoc' || entityKey === 'general_foundation' || entityKey === 'medical') return '2';
+    return '3';
+}
+
+function getDateLabelByMode(termMode) {
+    if (termMode === 'none') return '任期情報';
+    return '任期満了予定・登記申請期限';
+}
+
+function getDateSuffixByMode(termMode) {
+    if (termMode === 'calendar') return '（暦上満了）';
+    if (termMode === 'none') return '';
+    return '（定時総会）';
+}
+
+function getTermModeNote(entityKey) {
+    var mode = getTermMode(entityKey);
+    if (mode === 'agm') return 'この法人類型は、最終事業年度に関する定時総会・定時評議員会の終結時ベースで表示します。開催期限の初期値は実務上の目安です。';
+    if (mode === 'calendar') return 'この法人類型は、法定上限年数を前提に暦上の満了日を表示します。開催期限の初期値は実務上の目安です。';
+    return 'この法人類型は、法定任期の自動計算対象外です。就任・退任等の変更登記は別途期限管理してください。';
+}
+
+// ===== 役職別・任期選択肢 =====
+function getTermsByRole(entityKey, role) {
+    var config = ENTITY_CONFIG[entityKey];
+    if (!config || !config.hasTerm) return [];
+
+    if (entityKey === 'kk_public' && role === '監査役') {
+        return [{ val: 4, label: '4年（監査役・法定）' }];
+    }
+    if (entityKey === 'kk_non_public' && role === '監査役') {
+        return [
+            { val: 4,  label: '4年（監査役）' },
+            { val: 10, label: '10年（監査役・定款伸長）' }
+        ];
+    }
+    if ((entityKey === 'general_assoc' || entityKey === 'general_foundation') && role === '監事') {
+        return [
+            { val: 2, label: '2年（監事・定款短縮）' },
+            { val: 4, label: '4年（監事・法定）' },
+            { val: 0, label: 'カスタム入力' }
+        ];
+    }
+    if (entityKey === 'general_foundation' && role === '評議員') {
+        return [
+            { val: 4, label: '4年（評議員）' },
+            { val: 0, label: 'カスタム入力' }
+        ];
+    }
+    if (entityKey === 'social_welfare' && role === '評議員') {
+        return [
+            { val: 4, label: '4年（評議員）' },
+            { val: 6, label: '6年（評議員・定款伸長）' },
+            { val: 0, label: 'カスタム入力' }
+        ];
+    }
+    if (entityKey === 'medical' && role === '監事') {
+        return [
+            { val: 2, label: '2年（監事）' },
+            { val: 0, label: 'カスタム入力' }
+        ];
+    }
+    return config.terms;
+}
+
+function getLockBadgeText(entityKey, role) {
+    if (role === '監査役') {
+        if (entityKey === 'kk_public') return '会社法336条：4年固定（短縮・伸長不可）';
+        if (entityKey === 'kk_non_public') return '会社法336条：短縮不可（4年または定款で10年）';
+    }
+    if ((entityKey === 'general_assoc' || entityKey === 'general_foundation') && role === '監事') {
+        return '一般法人法：監事は4年、定款で2年まで短縮可';
+    }
+    if (entityKey === 'medical') {
+        return '医療法：役員の任期は2年を超えることができません';
+    }
+    return '';
+}
+
+// ===== ユーティリティ =====
+function escapeAttr(s) {
+    return String(s || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function escapeHtml(s) {
+    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// 西暦→和暦文字列
+function toWareki(dateStr) {
+    if (!dateStr) return '';
+    var parts = dateStr.split('-');
+    var y = parseInt(parts[0]), m = parseInt(parts[1]), day = parseInt(parts[2]);
+    var era, wYear;
+    if (y > 2019 || (y === 2019 && m >= 5)) {
+        era = '令和'; wYear = y - 2018;
+    } else if (y > 1989 || (y === 1989 && (m > 1 || day >= 8))) {
+        era = '平成'; wYear = y - 1988;
+    } else if (y > 1926 || (y === 1926 && (m > 12 || (m === 12 && day >= 25)))) {
+        era = '昭和'; wYear = y - 1925;
+    } else {
+        return y + '年' + m + '月' + day + '日';
+    }
+    var wYearStr = (wYear === 1) ? '元' : String(wYear);
+    return era + wYearStr + '年' + m + '月' + day + '日';
+}
+
+// 和暦→ISO
+function warekiToISO(era, year, month, day) {
+    if (!year || !month || !day) return null;
+    var y = parseInt(year, 10);
+    if (isNaN(y)) return null;
+    var westYear = 0;
+    if (era === '令和') westYear = 2018 + y;
+    else if (era === '平成') westYear = 1988 + y;
+    else if (era === '昭和') westYear = 1925 + y;
+    if (!westYear) return null;
+    var m = ('0' + parseInt(month, 10)).slice(-2);
+    var d = ('0' + parseInt(day, 10)).slice(-2);
+    return westYear + '-' + m + '-' + d;
+}
+
+// ISO→和暦コンポーネント
+function isoToWarekiComponents(isoDate) {
+    if (!isoDate) return { era: '令和', year: '', month: 1, day: 1 };
+    var parts = isoDate.split('-');
+    var y = parseInt(parts[0], 10), m = parseInt(parts[1], 10), day = parseInt(parts[2], 10);
+    var era, wYear;
+    if (y > 2019 || (y === 2019 && (m > 5 || (m === 5 && day >= 1)))) {
+        era = '令和'; wYear = y - 2018;
+    } else if (y > 1989 || (y === 1989 && (m > 1 || (m === 1 && day >= 8)))) {
+        era = '平成'; wYear = y - 1988;
+    } else {
+        era = '昭和'; wYear = y - 1925;
+    }
+    return { era: era, year: wYear, month: m, day: day };
+}
+
+// ===== 日付バリデーション =====
+function validateWarekiDate(era, year, month, day) {
+    var y = parseInt(year, 10), m = parseInt(month, 10), d = parseInt(day, 10);
+    if (!y) return null;
+    var westYear;
+    if (era === '令和') {
+        westYear = 2018 + y;
+        if (westYear < 2019 || (westYear === 2019 && (m < 5 || (m === 5 && d < 1)))) {
+            return '令和' + y + '年' + m + '月' + d + '日は存在しません（令和は2019年5月1日から）';
+        }
+    } else if (era === '平成') {
+        westYear = 1988 + y;
+        if (westYear < 1989 || (westYear === 1989 && m === 1 && d < 8)) {
+            return '平成' + y + '年' + m + '月' + d + '日は存在しません';
+        }
+        if (westYear > 2019 || (westYear === 2019 && (m > 4 || (m === 4 && d > 30)))) {
+            return '平成' + y + '年' + m + '月' + d + '日は存在しません（平成は2019年4月30日まで）';
+        }
+    } else if (era === '昭和') {
+        westYear = 1925 + y;
+        if (westYear < 1926 || (westYear === 1926 && (m < 12 || (m === 12 && d < 25)))) {
+            return '昭和' + y + '年' + m + '月' + d + '日は存在しません（昭和は1926年12月25日から）';
+        }
+        if (westYear > 1989 || (westYear === 1989 && (m > 1 || (m === 1 && d > 7)))) {
+            return '昭和' + y + '年' + m + '月' + d + '日は存在しません（昭和は1989年1月7日まで）';
+        }
+    }
+    var testDate = new Date(westYear, m - 1, d);
+    if (testDate.getFullYear() !== westYear || testDate.getMonth() !== m - 1 || testDate.getDate() !== d) {
+        return m + '月' + d + '日は存在しない日付です';
+    }
+    return null;
+}
+
+function parseLocalDate(dateStr) {
+    if (!dateStr) return null;
+    var p = dateStr.split('-');
+    if (p.length !== 3) return null;
+    var dt = new Date(parseInt(p[0], 10), parseInt(p[1], 10) - 1, parseInt(p[2], 10));
+    dt.setHours(0,0,0,0);
+    return dt;
+}
+
+function formatDateJP(dateObj) {
+    if (!dateObj) return '';
+    return dateObj.getFullYear() + '年' + (dateObj.getMonth() + 1) + '月' + dateObj.getDate() + '日';
+}
+
+function addDays(dateObj, days) {
+    var d = new Date(dateObj.getTime());
+    d.setDate(d.getDate() + days);
+    return d;
+}
+
+function daysDiff(fromDate, toDate) {
+    var ms = 24 * 60 * 60 * 1000;
+    return Math.floor((toDate.getTime() - fromDate.getTime()) / ms);
+}
+
+// 任期計算
+function calculateTermEndDate(electionDateStr, termYears, termMode) {
+    if (!electionDateStr) return null;
+    if (termYears === '0' || termYears === '' || isNaN(termYears)) return null;
+    var years = parseInt(termYears, 10);
+    var ep = electionDateStr.split('-');
+    var electDate = new Date(parseInt(ep[0], 10), parseInt(ep[1], 10) - 1, parseInt(ep[2], 10));
+    var limitDate = new Date(electDate.getFullYear() + years, electDate.getMonth(), electDate.getDate());
+    limitDate.setDate(limitDate.getDate() - 1);
+
+    if (termMode === 'calendar') {
+        var ly = limitDate.getFullYear();
+        var lm = ('0' + (limitDate.getMonth() + 1)).slice(-2);
+        var ld = ('0' + limitDate.getDate()).slice(-2);
+        return ly + '-' + lm + '-' + ld;
+    }
+
+    var fyMonth   = parseInt(document.getElementById('fy-month').value, 10);
+    var agmMonths = parseInt(document.getElementById('agm-period').value, 10);
+    var getLastDay = function(y, m) { return new Date(y, m, 0).getDate(); };
+    var fyYear = limitDate.getFullYear();
+    var fyEnd  = new Date(fyYear, fyMonth - 1, getLastDay(fyYear, fyMonth));
+    while (fyEnd > limitDate) {
+        fyYear--;
+        fyEnd = new Date(fyYear, fyMonth - 1, getLastDay(fyYear, fyMonth));
+    }
+    var agmDeadline = new Date(fyEnd.getFullYear(), fyEnd.getMonth() + 1 + agmMonths, 0);
+    var ay = agmDeadline.getFullYear();
+    var am = ('0' + (agmDeadline.getMonth() + 1)).slice(-2);
+    var ad = ('0' + agmDeadline.getDate()).slice(-2);
+    return ay + '-' + am + '-' + ad;
+}
+
+// ===== 初期化 =====
+document.addEventListener('DOMContentLoaded', function() {
+    var fySelect = document.getElementById('fy-month');
+    for (var i = 1; i <= 12; i++) {
+        var opt = document.createElement('option');
+        opt.value = i; opt.textContent = i + '月';
+        if (i === 3) opt.selected = true;
+        fySelect.appendChild(opt);
+    }
+    document.getElementById('agm-period').value = getRecommendedAgmPeriod(document.getElementById('entity-type').value);
+    updateGlobalTermModeUI();
+    addOfficerRow('', '', '', '', '就任');
+});
+
+// ===== 行追加 =====
+// 引数: role, name, dateISO, termVal, reason, agmOverride
+function addOfficerRow(role, name, dateISO, termVal, reason, agmOverride) {
+    role        = role        || '';
+    name        = name        || '';
+    dateISO     = dateISO     || '';
+    reason      = reason      || '就任';
+    agmOverride = agmOverride || '';
+
+    var tbody     = document.getElementById('officer-tbody');
+    var tr        = document.createElement('tr');
+    var entityKey = document.getElementById('entity-type').value;
+    var config    = ENTITY_CONFIG[entityKey];
+    var roleOpts  = ROLE_OPTIONS[entityKey] || [];
+
+    var customTermYears = '';
+    var initialTerm = (termVal !== null && termVal !== undefined && termVal !== '') ? termVal : config.defaultTerm;
+    if (typeof initialTerm === 'string' && initialTerm.indexOf('custom:') === 0) {
+        customTermYears = initialTerm.substring(7);
+        initialTerm = '0';
+    }
+    var initials  = dateISO ? isoToWarekiComponents(dateISO) : { era: '令和', year: '', month: 1, day: 1 };
+
+    // 役職オプション生成
+    var roleOptsHTML = '';
+    for (var i = 0; i < roleOpts.length; i++) {
+        roleOptsHTML += '<option value="' + escapeAttr(roleOpts[i]) + '"' + (role === roleOpts[i] ? ' selected' : '') + '>' + escapeHtml(roleOpts[i]) + '</option>';
+    }
+    // 既存データの役職が選択肢にない場合（例：旧CSV読込）
+    if (role && roleOpts.indexOf(role) < 0) {
+        roleOptsHTML = '<option value="' + escapeAttr(role) + '" selected>' + escapeHtml(role) + '</option>' + roleOptsHTML;
+    }
+
+    // 月日オプション
+    var monthOpts = '';
+    for (var i = 1; i <= 12; i++) {
+        monthOpts += '<option value="' + i + '"' + (initials.month === i ? ' selected' : '') + '>' + i + '月</option>';
+    }
+    var dayOpts = '';
+    for (var i = 1; i <= 31; i++) {
+        dayOpts += '<option value="' + i + '"' + (initials.day === i ? ' selected' : '') + '>' + i + '日</option>';
+    }
+
+    var agmDateVal = agmOverride;
+    if (!agmDateVal && dateISO && config.hasTerm && reason !== '補欠') {
+        agmDateVal = calculateTermEndDate(dateISO, initialTerm, getTermMode(entityKey)) || '';
+    }
+
+    var eraReiwa   = initials.era === '令和' ? ' selected' : '';
+    var eraHeisei  = initials.era === '平成' ? ' selected' : '';
+    var eraShowa   = initials.era === '昭和' ? ' selected' : '';
+    var selJuunin  = reason === '就任' ? ' selected' : '';
+    var selJunin   = reason === '重任' ? ' selected' : '';
+    var selHoketsu = reason === '補欠' ? ' selected' : '';
+    var termDisplay   = config.hasTerm ? 'block' : 'none';
+    var noTermDisplay = config.hasTerm ? 'none' : 'block';
+    var subWarnDisplay = reason === '補欠' ? 'block' : 'none';
+    var hoketsuVisible = reason === '補欠' ? ' visible' : '';
+    var hoketsuText = getTermMode(entityKey) === 'calendar' ? '前任者の任期満了日：' : '前任者の任期満了定時総会日：';
+
+    tr.innerHTML =
+        // 役職
+        '<td>' +
+          '<select class="role-select" onchange="onRoleChanged(this)">' + roleOptsHTML + '</select>' +
+          '<div class="term-locked-badge"></div>' +
+          '<span class="print-val role-pv"></span>' +
+        '</td>' +
+        // 氏名
+        '<td>' +
+          '<input type="text" class="inp-name" value="' + escapeAttr(name) + '" placeholder="氏名" style="width:100%">' +
+          '<span class="print-val name-pv"></span>' +
+        '</td>' +
+        // 選任年月日
+        '<td>' +
+          '<input type="hidden" class="inp-date-iso" value="' + escapeAttr(dateISO) + '">' +
+          '<div class="wareki-group">' +
+            '<select class="wareki-era" onchange="onWarekiChanged(this)">' +
+              '<option value="令和"' + eraReiwa + '>令和</option>' +
+              '<option value="平成"' + eraHeisei + '>平成</option>' +
+              '<option value="昭和"' + eraShowa + '>昭和</option>' +
+            '</select>' +
+            '<input type="number" class="wareki-year" value="' + initials.year + '" min="1" max="99" onchange="onWarekiChanged(this)">' +
+            '<span class="unit-label">年</span>' +
+            '<select class="wareki-month" onchange="onWarekiChanged(this)">' + monthOpts + '</select>' +
+            '<select class="wareki-day" onchange="onWarekiChanged(this)">' + dayOpts + '</select>' +
+          '</div>' +
+          '<div class="date-error-msg"></div>' +
+          '<span class="print-val date-pv"></span>' +
+        '</td>' +
+        // 任期設定
+        '<td>' +
+          '<select class="inp-term" onchange="onInputChanged(this,\'auto\')" style="display:' + termDisplay + '"></select>' +
+          '<div class="term-custom-wrap">' +
+            '<input type="number" class="term-custom-input" min="1" max="50" placeholder="年数" onchange="onInputChanged(this,\'auto\')"> <span class="unit-label">年</span>' +
+          '</div>' +
+          '<span class="no-term-msg" style="display:' + noTermDisplay + ';font-size:0.8rem;color:#64748b;">法定任期なし</span>' +
+          '<span class="print-val term-pv"></span>' +
+        '</td>' +
+        // 選任事由
+        '<td>' +
+          '<div style="display:flex;flex-direction:column;">' +
+            '<select class="inp-reason" onchange="onInputChanged(this,\'reason\')">' +
+              '<option value="就任"' + selJuunin  + '>就任</option>' +
+              '<option value="重任"' + selJunin   + '>重任</option>' +
+              '<option value="補欠"' + selHoketsu + '>補欠</option>' +
+            '</select>' +
+            '<span class="substitute-warn" style="display:' + subWarnDisplay + ';">※要残任期間確認</span>' +
+          '</div>' +
+          '<span class="print-val reason-pv"></span>' +
+        '</td>' +
+        // 任期満了予定
+        '<td>' +
+          '<div class="hoketsu-label' + hoketsuVisible + '">' + hoketsuText + '</div>' +
+          '<input type="date" class="inp-agm" value="' + escapeAttr(agmDateVal) + '" onchange="onInputChanged(this,\'manual\')">' +
+          '<div class="agm-display" style="font-size:0.8rem;color:var(--primary-navy);margin-top:4px;"></div>' +
+          '<div class="status-note"></div>' +
+        '</td>' +
+        // 削除
+        '<td style="text-align:center;" class="no-print">' +
+          '<button class="btn btn-outline" style="padding:4px 8px;font-size:0.8rem;color:#ef4444;border-color:#e2e8f0;" onclick="this.closest(\'tr\').remove()">削除</button>' +
+        '</td>';
+
+    tbody.appendChild(tr);
+
+    var termSelect  = tr.querySelector('.inp-term');
+    var currentRole = tr.querySelector('.role-select').value;
+    updateTermDropdown(termSelect, config, entityKey, currentRole);
+    updateLockBadge(tr, entityKey, currentRole);
+
+    // 初期値設定
+    var found = false;
+    for (var i = 0; i < termSelect.options.length; i++) {
+        if (termSelect.options[i].value == initialTerm) { found = true; break; }
+    }
+    if (found) termSelect.value = initialTerm;
+    else if (termSelect.options.length > 0) termSelect.value = termSelect.options[0].value;
+
+    if (String(initialTerm) === '0') {
+        var customInput = tr.querySelector('.term-custom-input');
+        if (customInput && customTermYears) customInput.value = customTermYears;
+    }
+    syncCustomTermInput(tr);
+    updateRowDisplay(tr);
+}
+
+function syncCustomTermInput(tr) {
+    var selectEl = tr.querySelector('.inp-term');
+    var wrap = tr.querySelector('.term-custom-wrap');
+    if (!selectEl || !wrap) return;
+    if (selectEl.value === '0') wrap.classList.add('visible');
+    else wrap.classList.remove('visible');
+}
+
+function getRowTermYears(tr) {
+    var termSelect = tr.querySelector('.inp-term');
+    if (!termSelect) return '';
+    if (termSelect.value === '0') {
+        var custom = tr.querySelector('.term-custom-input');
+        return custom ? custom.value : '';
+    }
+    return termSelect.value;
+}
+
+function updateGlobalTermModeUI() {
+    var entityKey = document.getElementById('entity-type').value;
+    var termMode = getTermMode(entityKey);
+    document.getElementById('term-mode-note').textContent = getTermModeNote(entityKey);
+
+    var agmLabel = document.getElementById('agm-period-label');
+    var agmSelect = document.getElementById('agm-period');
+    var fyLabel = document.getElementById('fy-month-label');
+    var fySelect = document.getElementById('fy-month');
+
+    var needsAgm = termMode === 'agm';
+    agmLabel.style.opacity = needsAgm ? '1' : '0.5';
+    fyLabel.style.opacity = needsAgm ? '1' : '0.5';
+    agmSelect.disabled = !needsAgm;
+    fySelect.disabled = !needsAgm;
+
+    var dateHeader = document.querySelector('#officer-table thead th:nth-child(6)');
+    if (dateHeader) dateHeader.textContent = getDateLabelByMode(termMode);
+
+    var labels = document.querySelectorAll('.hoketsu-label');
+    for (var i = 0; i < labels.length; i++) {
+        labels[i].textContent = termMode === 'calendar' ? '前任者の任期満了日：' : '前任者の任期満了定時総会日：';
+    }
+}
+
+// ===== 任期ドロップダウン更新 =====
+function updateTermDropdown(selectEl, config, entityKey, role) {
+    selectEl.innerHTML = '';
+    if (!config.hasTerm) return;
+    var ek = entityKey || document.getElementById('entity-type').value;
+    var terms = getTermsByRole(ek, role || '');
+    for (var i = 0; i < terms.length; i++) {
+        var opt = document.createElement('option');
+        opt.value = terms[i].val;
+        opt.textContent = terms[i].label;
+        selectEl.appendChild(opt);
+    }
+}
+
+// [改善3] 監査役制限バッジ更新
+function updateLockBadge(tr, entityKey, role) {
+    var badge = tr.querySelector('.term-locked-badge');
+    if (!badge) return;
+    var msg = getLockBadgeText(entityKey, role);
+    if (msg) {
+        badge.textContent = msg;
+        badge.classList.add('visible');
+    } else {
+        badge.textContent = '';
+        badge.classList.remove('visible');
+    }
+}
+
+// ===== イベントハンドラ =====
+
+// [改善3] 役職変更
+function onRoleChanged(el) {
+    var tr        = el.closest('tr');
+    var entityKey = document.getElementById('entity-type').value;
+    var config    = ENTITY_CONFIG[entityKey];
+    var role      = el.value;
+    var termSelect = tr.querySelector('.inp-term');
+    var currTerm   = termSelect.value;
+
+    updateTermDropdown(termSelect, config, entityKey, role);
+    updateLockBadge(tr, entityKey, role);
+
+    var found = false;
+    for (var j = 0; j < termSelect.options.length; j++) {
+        if (termSelect.options[j].value == currTerm) { found = true; break; }
+    }
+    if (!found && termSelect.options.length > 0) termSelect.value = termSelect.options[0].value;
+
+    syncCustomTermInput(tr);
+    onInputChanged(termSelect, 'auto');
+}
+
+// [改善2] 和暦変更（バリデーション付き）
+function onWarekiChanged(el) {
+    var tr    = el.closest('tr');
+    var era   = tr.querySelector('.wareki-era').value;
+    var year  = tr.querySelector('.wareki-year').value;
+    var month = tr.querySelector('.wareki-month').value;
+    var day   = tr.querySelector('.wareki-day').value;
+
+    var errEl  = tr.querySelector('.date-error-msg');
+    var wGroup = tr.querySelector('.wareki-group');
+    var errMsg = validateWarekiDate(era, year, month, day);
+
+    if (errMsg) {
+        errEl.textContent = '⚠ ' + errMsg;
+        errEl.classList.add('visible');
+        wGroup.classList.add('has-error');
+        tr.querySelector('.inp-date-iso').value = '';
+        updateRowDisplay(tr);
+        return;
+    } else {
+        errEl.classList.remove('visible');
+        wGroup.classList.remove('has-error');
+    }
+
+    var iso = warekiToISO(era, year, month, day);
+    tr.querySelector('.inp-date-iso').value = iso || '';
+    onInputChanged(el, 'auto');
+}
+
+function onInputChanged(el, type) {
+    var tr        = el.closest('tr');
+    var entityKey = document.getElementById('entity-type').value;
+    var config    = ENTITY_CONFIG[entityKey];
+    var termMode  = getTermMode(entityKey);
+
+    if (type === 'reason' || !type) {
+        var r = tr.querySelector('.inp-reason').value;
+        tr.querySelector('.substitute-warn').style.display = (r === '補欠') ? 'block' : 'none';
+        var hoketsuLabel = tr.querySelector('.hoketsu-label');
+        if (hoketsuLabel) {
+            if (r === '補欠') hoketsuLabel.classList.add('visible');
+            else hoketsuLabel.classList.remove('visible');
+        }
+    }
+
+    syncCustomTermInput(tr);
+
+    if (type === 'auto' && config.hasTerm) {
+        var reason = tr.querySelector('.inp-reason').value;
+        if (reason !== '補欠') {
+            var dateISO = tr.querySelector('.inp-date-iso').value;
+            var term    = getRowTermYears(tr);
+            if (dateISO && term) {
+                var newEnd = calculateTermEndDate(dateISO, term, termMode);
+                if (newEnd) tr.querySelector('.inp-agm').value = newEnd;
+            } else if (!term) {
+                tr.querySelector('.inp-agm').value = '';
+            }
+        }
+    }
+    updateRowDisplay(tr);
+}
+
+function updateRowDisplay(tr) {
+    var entityKey  = document.getElementById('entity-type').value;
+    var config     = ENTITY_CONFIG[entityKey];
+    var termMode   = getTermMode(entityKey);
+    var agmVal     = tr.querySelector('.inp-agm').value;
+    var agmDisp    = tr.querySelector('.agm-display');
+    var statusNote = tr.querySelector('.status-note');
+    var termMsg    = tr.querySelector('.no-term-msg');
+    var termSelect = tr.querySelector('.inp-term');
+    var agmInput   = tr.querySelector('.inp-agm');
+
+    tr.classList.remove('row-warning', 'row-pending', 'row-expired');
+
+    if (!config.hasTerm) {
+        if (termSelect) termSelect.style.display = 'none';
+        if (termMsg) termMsg.style.display = 'block';
+        agmInput.style.display = 'none';
+        agmDisp.textContent = '---';
+        if (statusNote) statusNote.innerHTML = '';
+    } else {
+        if (termSelect) termSelect.style.display = 'block';
+        if (termMsg) termMsg.style.display = 'none';
+        agmInput.style.display = 'block';
+        if (!agmVal) {
+            agmDisp.textContent = '';
+            if (statusNote) statusNote.innerHTML = '';
+        } else {
+            var endDate = parseLocalDate(agmVal);
+            var deadlineDate = endDate ? addDays(endDate, 14) : null;
+            var today = new Date();
+            today.setHours(0,0,0,0);
+            agmDisp.textContent = toWareki(agmVal) + getDateSuffixByMode(termMode);
+
+            if (statusNote) {
+                var html = '';
+                if (deadlineDate) {
+                    html += '<div class="deadline-line">登記申請期限：' + formatDateJP(deadlineDate) + '</div>';
+                }
+                if (endDate && deadlineDate) {
+                    var daysToEnd = daysDiff(today, endDate);
+                    var daysToDeadline = daysDiff(today, deadlineDate);
+                    if (daysToDeadline < 0) {
+                        tr.classList.add('row-expired');
+                        html += '<div class="status-line status-overdue">懈怠リスクあり（' + Math.abs(daysToDeadline) + '日超過）</div>';
+                    } else if (daysToEnd < 0) {
+                        tr.classList.add('row-pending');
+                        html += '<div class="status-line status-pending">要登記申請（期限：' + formatDateJP(deadlineDate) + '）</div>';
+                    } else if (daysToEnd <= 30) {
+                        tr.classList.add('row-warning');
+                        html += '<div class="status-line status-warning">定時総会・満了日まであと' + daysToEnd + '日</div>';
+                    }
+                }
+                statusNote.innerHTML = html;
+            }
+        }
+    }
+    updatePrintVals(tr);
+}
+
+// ===== [改善4] 印刷用値の更新 =====
+function updatePrintVals(tr) {
+    var entityKey = document.getElementById('entity-type').value;
+    var config    = ENTITY_CONFIG[entityKey];
+
+    var rolePv = tr.querySelector('.role-pv');
+    var roleEl = tr.querySelector('.role-select');
+    if (rolePv) rolePv.textContent = roleEl ? roleEl.value : '';
+
+    var namePv = tr.querySelector('.name-pv');
+    var nameEl = tr.querySelector('.inp-name');
+    if (namePv) namePv.textContent = nameEl ? nameEl.value : '';
+
+    var datePv  = tr.querySelector('.date-pv');
+    var dateISO = tr.querySelector('.inp-date-iso').value;
+    if (datePv) datePv.textContent = dateISO ? toWareki(dateISO) : '（未入力）';
+
+    var termPv  = tr.querySelector('.term-pv');
+    var termSel = tr.querySelector('.inp-term');
+    if (termPv) {
+        if (!config.hasTerm) {
+            termPv.textContent = '法定任期なし';
+        } else if (termSel) {
+            if (termSel.value === '0') {
+                var customVal = tr.querySelector('.term-custom-input').value;
+                termPv.textContent = customVal ? customVal + '年（カスタム）' : 'カスタム未入力';
+            } else if (termSel.selectedIndex >= 0) {
+                termPv.textContent = termSel.options[termSel.selectedIndex] ? termSel.options[termSel.selectedIndex].text : '';
+            }
+        }
+    }
+
+    var reasonPv  = tr.querySelector('.reason-pv');
+    var reasonSel = tr.querySelector('.inp-reason');
+    if (reasonPv) reasonPv.textContent = reasonSel ? reasonSel.value : '';
+}
+
+// ===== 法人種別変更 =====
+function onEntityChanged() {
+    var entityKey = document.getElementById('entity-type').value;
+    var config    = ENTITY_CONFIG[entityKey];
+    var roleOpts  = ROLE_OPTIONS[entityKey] || [];
+    document.getElementById('agm-period').value = getRecommendedAgmPeriod(entityKey);
+    updateGlobalTermModeUI();
+
+    var rows = document.querySelectorAll('#officer-tbody tr');
+    for (var i = 0; i < rows.length; i++) {
+        var tr = rows[i];
+        var roleSelect = tr.querySelector('.role-select');
+        if (roleSelect) {
+            var currRole = roleSelect.value;
+            roleSelect.innerHTML = '';
+            for (var j = 0; j < roleOpts.length; j++) {
+                var opt = document.createElement('option');
+                opt.value = roleOpts[j]; opt.textContent = roleOpts[j];
+                roleSelect.appendChild(opt);
+            }
+            if (roleOpts.indexOf(currRole) >= 0) roleSelect.value = currRole;
+        }
+
+        var newRole    = roleSelect ? roleSelect.value : '';
+        var termSelect = tr.querySelector('.inp-term');
+        var currVal    = termSelect ? termSelect.value : '';
+        updateTermDropdown(termSelect, config, entityKey, newRole);
+        updateLockBadge(tr, entityKey, newRole);
+
+        if (!config.hasTerm) {
+            if (termSelect) termSelect.style.display = 'none';
+        } else {
+            if (termSelect) termSelect.style.display = 'block';
+            var exists = false;
+            for (var k = 0; k < termSelect.options.length; k++) {
+                if (termSelect.options[k].value == currVal) { exists = true; break; }
+            }
+            if (!exists) termSelect.value = config.defaultTerm || (termSelect.options.length ? termSelect.options[0].value : 0);
+        }
+        syncCustomTermInput(tr);
+        onInputChanged(termSelect || tr.querySelector('.inp-reason'), 'auto');
+    }
+}
+
+function recalculateAll() {
+    var rows = document.querySelectorAll('#officer-tbody tr');
+    for (var i = 0; i < rows.length; i++) {
+        var tr = rows[i];
+        var reason = tr.querySelector('.inp-reason');
+        if (reason && reason.value !== '補欠') {
+            onInputChanged(tr.querySelector('.inp-term'), 'auto');
+        } else {
+            updateRowDisplay(tr);
+        }
+    }
+}
+
+function toggleAccordion(header) {
+    var content = header.nextElementSibling;
+    content.classList.toggle('active');
+    header.querySelector('span:last-child').textContent = content.classList.contains('active') ? '▲' : '▼';
+}
+
+// ===== [改善4] 印刷機能 =====
+function preparePrintHeader() {
+    var cn         = document.getElementById('company-name').value.trim();
+    var entityKey  = document.getElementById('entity-type').value;
+    var entityName = ENTITY_CONFIG[entityKey].name;
+    var fyMonth    = document.getElementById('fy-month').value;
+
+    var termMode = getTermMode(entityKey);
+    document.getElementById('print-company-name').textContent =
+        (cn || '（法人名未入力）') + '　役員任期一覧';
+    document.getElementById('print-entity-name').textContent =
+        '法人種別：' + entityName + (termMode === 'agm' ? '　　決算月：' + fyMonth + '月' : '　　表示基準：' + (termMode === 'calendar' ? '暦上満了' : '自動計算なし'));
+
+    var today = new Date();
+    document.getElementById('print-date').textContent =
+        today.getFullYear() + '年' + (today.getMonth() + 1) + '月' + today.getDate() + '日';
+
+    // 印刷用値を最新化
+    var rows = document.querySelectorAll('#officer-tbody tr');
+    for (var i = 0; i < rows.length; i++) updatePrintVals(rows[i]);
+}
+
+function printTable() {
+    preparePrintHeader();
+    window.print();
+}
+
+// ブラウザネイティブ印刷（Ctrl+P）への対応
+window.addEventListener('beforeprint', preparePrintHeader);
+
+// ===== 保存・読込 =====
+function csvEscape(value) {
+    var s = String(value == null ? '' : value);
+    return '"' + s.replace(/"/g, '""') + '"';
+}
+
+function parseCSV(text) {
+    var rows = [];
+    var row = [];
+    var cur = '';
+    var inQuotes = false;
+    for (var i = 0; i < text.length; i++) {
+        var c = text[i];
+        if (inQuotes) {
+            if (c === '"') {
+                if (text[i + 1] === '"') {
+                    cur += '"';
+                    i++;
+                } else {
+                    inQuotes = false;
+                }
+            } else {
+                cur += c;
+            }
+        } else {
+            if (c === '"') {
+                inQuotes = true;
+            } else if (c === ',') {
+                row.push(cur);
+                cur = '';
+            } else if (c === '\n') {
+                row.push(cur);
+                rows.push(row);
+                row = [];
+                cur = '';
+            } else if (c === '\n') {
+            } else {
+                cur += c;
+            }
+        }
+    }
+    if (cur.length > 0 || row.length > 0) {
+        row.push(cur);
+        rows.push(row);
+    }
+    return rows;
+}
+
+function downloadCSV() {
+    var cn        = document.getElementById('company-name').value.trim();
+    var entityKey = document.getElementById('entity-type').value;
+    var fyMonth   = document.getElementById('fy-month').value;
+    var agmPeriod = document.getElementById('agm-period').value;
+    var rows      = document.querySelectorAll('#officer-tbody tr');
+    var csvLines  = [
+        '﻿#META companyName=' + encodeURIComponent(cn),
+        '#META entityType=' + encodeURIComponent(entityKey),
+        '#META fyMonth=' + encodeURIComponent(fyMonth),
+        '#META agmPeriod=' + encodeURIComponent(agmPeriod),
+        '役職,氏名,選任日ISO,任期(年),事由,任期満了日'
+    ];
+
+    for (var i = 0; i < rows.length; i++) {
+        var tr   = rows[i];
+        var role = tr.querySelector('.role-select') ? tr.querySelector('.role-select').value : '';
+        var name = tr.querySelector('.inp-name').value;
+        var date = tr.querySelector('.inp-date-iso').value;
+        var termSelectEl = tr.querySelector('.inp-term');
+        var term = termSelectEl && termSelectEl.value === '0'
+            ? 'custom:' + (tr.querySelector('.term-custom-input').value || '')
+            : getRowTermYears(tr);
+        var reas = tr.querySelector('.inp-reason').value;
+        var agm  = tr.querySelector('.inp-agm').value;
+        csvLines.push([
+            csvEscape(role), csvEscape(name), csvEscape(date),
+            csvEscape(term), csvEscape(reas), csvEscape(agm)
+        ].join(','));
+    }
+
+    var csv   = csvLines.join('\n');
+    var blob  = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    var url   = URL.createObjectURL(blob);
+    var link  = document.createElement('a');
+    link.href = url;
+    var filename = (cn ? cn.replace(/[\/\\?%*:|"<>]/g, '_') : 'corporate') + '_役員任期.csv';
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+
+function importCSV(input) {
+    var file = input.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function(e) {
+        var text = e.target.result || '';
+        var rawLines = text.split(/\n/);
+        var dataLines = [];
+        var meta = {};
+        for (var i = 0; i < rawLines.length; i++) {
+            var line = rawLines[i].replace(/^﻿/, '');
+            if (line.indexOf('#META ') === 0) {
+                var body = line.substring(6);
+                var eq = body.indexOf('=');
+                if (eq > -1) {
+                    meta[body.substring(0, eq)] = decodeURIComponent(body.substring(eq + 1));
+                }
+            } else {
+                dataLines.push(rawLines[i]);
+            }
+        }
+
+        if (meta.companyName !== undefined) document.getElementById('company-name').value = meta.companyName;
+        if (meta.entityType && ENTITY_CONFIG[meta.entityType]) document.getElementById('entity-type').value = meta.entityType;
+        if (meta.fyMonth) document.getElementById('fy-month').value = meta.fyMonth;
+        if (meta.agmPeriod) document.getElementById('agm-period').value = meta.agmPeriod;
+        updateGlobalTermModeUI();
+
+        var parsed = parseCSV(dataLines.join('\n'));
+        document.getElementById('officer-tbody').innerHTML = '';
+        for (var j = 0; j < parsed.length; j++) {
+            var cols = parsed[j];
+            if (!cols || !cols.length) continue;
+            if (j === 0 && cols[0] === '役職') continue;
+            if (cols.length >= 6) addOfficerRow(cols[0], cols[1], cols[2], cols[3], cols[4], cols[5]);
+            else if (cols.length >= 5) addOfficerRow('', cols[0], cols[1], cols[2], cols[3], cols[4]);
+        }
+        if (!document.querySelector('#officer-tbody tr')) addOfficerRow('', '', '', '', '就任');
+        input.value = '';
+    };
+    reader.readAsText(file);
+}
+</script>
+</body>
+</html>

@@ -1,716 +1,217 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>役員任期管理＆早見表 でんでん印</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --primary-navy: #1e3a8a;
-            --primary-dark: #172554;
-            --accent-gold: #d97706;
-            --accent-light: #fcd34d;
-            --bg-light: #f8fafc;
-            --text-main: #0f172a;
-            --border-color: #cbd5e1;
-            --alert-bg: #fee2e2;
-            --alert-text: #b91c1c;
-        }
-        body {
-            font-family: 'Noto Sans JP', sans-serif;
-            background-color: var(--bg-light);
-            color: var(--text-main);
-            margin: 0;
-            padding: 20px;
-            min-height: 100vh;
-        }
-        h1, h2, h3, th { font-family: 'Noto Serif JP', serif; }
-        .container {
-            max-width: 1000px;
-            margin: 0 auto;
-            background: white;
-            border-top: 5px solid var(--primary-navy);
-            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
-            padding: 2rem;
-        }
-        header {
-            display: flex;
-            align-items: center;
-            border-bottom: 2px solid var(--primary-navy);
-            padding-bottom: 1.5rem;
-            margin-bottom: 2rem;
-        }
-        .turtle-icon { width: 50px; height: 50px; margin-right: 15px; }
-        h1 {
-            font-size: 1.8rem;
-            color: var(--primary-navy);
-            margin: 0;
-            display: flex;
-            align-items: baseline;
-            gap: 10px;
-        }
-        .entity-selector-area {
-            background: #eff6ff;
-            border: 2px solid #bfdbfe;
-            border-radius: 8px;
-            padding: 1.5rem;
-            margin-bottom: 2rem;
-        }
-        .entity-selector-label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 700;
-            color: var(--primary-navy);
-            font-size: 1.1rem;
-        }
-        .entity-select {
-            width: 100%;
-            padding: 12px;
-            font-size: 1.1rem;
-            border: 2px solid var(--primary-navy);
-            border-radius: 6px;
-            color: var(--primary-dark);
-            background: white;
-            cursor: pointer;
-        }
-        .sub-settings {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1.5rem;
-            margin-top: 1.5rem;
-            padding-top: 1.5rem;
-            border-top: 1px dashed var(--border-color);
-        }
-        .form-group { display: flex; flex-direction: column; }
-        label {
-            font-size: 0.9rem;
-            font-weight: 700;
-            color: var(--primary-navy);
-            margin-bottom: 0.5rem;
-        }
-        select, input[type="text"], input[type="date"], input[type="number"] {
-            padding: 8px 12px;
-            border: 1px solid var(--border-color);
-            border-radius: 4px;
-            font-size: 0.95rem;
-        }
-        .wareki-group {
-            display: flex;
-            gap: 4px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-        .wareki-group select, .wareki-group input {
-            padding: 4px 2px;
-            font-size: 0.9rem;
-            text-align: center;
-        }
-        .wareki-era { width: 60px; }
-        .wareki-year { width: 45px; }
-        .wareki-month, .wareki-day { width: 45px; }
-        .unit-label { font-size: 0.8rem; font-weight: bold; color: var(--primary-navy); }
-        .table-responsive { overflow-x: auto; }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.95rem;
-            margin-bottom: 2rem;
-        }
-        thead th {
-            background: var(--primary-navy);
-            color: white;
-            padding: 12px;
-            white-space: nowrap;
-            text-align: left;
-        }
-        tbody td {
-            padding: 12px;
-            border-bottom: 1px solid var(--border-color);
-            vertical-align: middle;
-        }
-        .actions {
-            display: flex;
-            justify-content: flex-end;
-            margin-bottom: 1rem;
-            gap: 1rem;
-        }
-        .btn {
-            border: none;
-            padding: 10px 20px;
-            border-radius: 4px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.2s;
-            font-family: inherit;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .btn-navy { background: var(--primary-navy); color: white; }
-        .btn-navy:hover { background: var(--primary-dark); }
-        .btn-outline { background: white; border: 1px solid var(--primary-navy); color: var(--primary-navy); }
-        .btn-outline:hover { background: #eff6ff; }
-        .btn-gold { background: var(--accent-gold); color: white; }
-        .btn-gold:hover { background: #b45309; }
-        .row-expired { background-color: var(--alert-bg) !important; }
-        .substitute-warn {
-            color: #dc2626;
-            font-size: 0.75rem;
-            margin-top: 4px;
-            font-weight: bold;
-            display: none;
-        }
-        .accordion {
-            margin-top: 3rem;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            overflow: hidden;
-        }
-        .accordion-header {
-            background: #f1f5f9;
-            padding: 1rem 1.5rem;
-            cursor: pointer;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-weight: bold;
-            color: var(--primary-navy);
-            transition: background 0.2s;
-        }
-        .accordion-header:hover { background: #e2e8f0; }
-        .accordion-content { display: none; padding: 1.5rem; background: white; }
-        .accordion-content.active { display: block; }
-        .ref-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
-        .ref-table th, .ref-table td { border: 1px solid var(--border-color); padding: 8px 12px; }
-        .ref-table th { background: #f8fafc; color: var(--primary-navy); }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>でんでん印のツール集</title>
+  <meta name="description" content="でんでん印の実務ツール集。役員任期算定シミュレーターなどをまとめたポータルページです。">
+  <style>
+    :root {
+      --bg: #f7f8fb;
+      --card: #ffffff;
+      --text: #1f2937;
+      --sub: #6b7280;
+      --line: #e5e7eb;
+      --accent: #2563eb;
+      --accent-soft: #dbeafe;
+      --shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Yu Gothic", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top right, #eef4ff 0, #f7f8fb 35%),
+        var(--bg);
+      line-height: 1.6;
+    }
+
+    .wrap {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 32px 20px 56px;
+    }
+
+    .hero {
+      background: linear-gradient(135deg, #ffffff 0%, #f8fbff 100%);
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      padding: 32px 28px;
+      box-shadow: var(--shadow);
+      margin-bottom: 28px;
+    }
+
+    .badge {
+      display: inline-block;
+      margin-bottom: 12px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-size: 0.9rem;
+      font-weight: 700;
+    }
+
+    h1 {
+      margin: 0 0 10px;
+      font-size: clamp(1.8rem, 4vw, 2.6rem);
+      line-height: 1.25;
+    }
+
+    .lead {
+      margin: 0;
+      color: var(--sub);
+      font-size: 1rem;
+    }
+
+    .section-title {
+      margin: 32px 0 14px;
+      font-size: 1.15rem;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 18px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      padding: 22px;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      min-height: 220px;
+    }
+
+    .card h2 {
+      margin: 0 0 8px;
+      font-size: 1.2rem;
+    }
+
+    .card p {
+      margin: 0 0 18px;
+      color: var(--sub);
+      flex-grow: 1;
+    }
+
+    .meta {
+      display: inline-block;
+      margin-bottom: 10px;
+      font-size: 0.85rem;
+      color: var(--sub);
+    }
+
+    .btn {
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 16px;
+      border-radius: 12px;
+      text-decoration: none;
+      font-weight: 700;
+      border: 1px solid transparent;
+      transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+      cursor: pointer;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+      box-shadow: 0 8px 18px rgba(37, 99, 235, 0.22);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 22px rgba(37, 99, 235, 0.28);
+    }
+
+    .btn-secondary {
+      background: #f9fafb;
+      color: var(--sub);
+      border-color: var(--line);
+      cursor: default;
+    }
+
+    .note {
+      margin-top: 28px;
+      padding: 18px 20px;
+      border-radius: 16px;
+      background: rgba(255,255,255,0.78);
+      border: 1px solid var(--line);
+      color: var(--sub);
+      font-size: 0.95rem;
+    }
+
+    footer {
+      margin-top: 30px;
+      color: var(--sub);
+      font-size: 0.9rem;
+      text-align: center;
+    }
+
+    @media (max-width: 640px) {
+      .wrap { padding: 20px 14px 36px; }
+      .hero { padding: 24px 18px; border-radius: 20px; }
+      .card { min-height: auto; }
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <svg class="turtle-icon" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="50" cy="50" r="30" fill="#1e3a8a" stroke="#d97706" stroke-width="3"/>
-                <path d="M50 30 L65 40 L65 60 L50 70 L35 60 L35 40 Z" fill="#172554" stroke="#d97706" stroke-width="2"/>
-                <path d="M50 30 L50 70 M35 40 L65 40 M35 60 L65 60" stroke="#d97706" stroke-width="2" stroke-linecap="round"/>
-                <circle cx="50" cy="18" r="14" fill="#1e3a8a" stroke="#d97706" stroke-width="3"/>
-                <circle cx="44" cy="16" r="2" fill="#d97706"/>
-                <circle cx="56" cy="16" r="2" fill="#d97706"/>
-                <path d="M22 35 Q10 20 25 15 Q30 25 22 35" fill="#1e3a8a" stroke="#d97706" stroke-width="3"/>
-                <path d="M78 35 Q90 20 75 15 Q70 25 78 35" fill="#1e3a8a" stroke="#d97706" stroke-width="3"/>
-            </svg>
-            <h1>法人役員任期管理 <span style="font-size:0.6em; margin-left:10px; color:var(--accent-gold);">でんでん印</span></h1>
-        </header>
+  <main class="wrap">
+    <section class="hero">
+      <div class="badge">でんでん印</div>
+      <h1>でんでん印のツール集</h1>
+      <p class="lead">
+        実務で使いやすい小さなツールを、ひとつのページにまとめて公開していくための入口ページです。
+        まずは役員任期算定シミュレーターへのリンクを設置しています。
+      </p>
+    </section>
 
-        <div class="entity-selector-area">
-            <label class="entity-selector-label">対象法人の種類を選択</label>
-            <select id="entity-type" class="entity-select" onchange="onEntityChanged()">
-                <option value="kk_non_public" selected>株式会社（非公開会社）</option>
-                <option value="kk_public">株式会社（公開会社）</option>
-                <option value="yugen_godo">特例有限会社・合同会社</option>
-                <option value="general_assoc">一般社団法人・一般財団法人</option>
-                <option value="social_welfare">社会福祉法人</option>
-                <option value="medical">医療法人</option>
-            </select>
-            <div class="sub-settings">
-                <div class="form-group">
-                    <label>決算月（事業年度末）</label>
-                    <select id="fy-month" onchange="recalculateAll()"></select>
-                </div>
-                <div class="form-group">
-                    <label>定時総会の開催期限</label>
-                    <select id="agm-period" onchange="recalculateAll()">
-                        <option value="2">決算日から2ヶ月以内</option>
-                        <option value="3" selected>決算日から3ヶ月以内</option>
-                    </select>
-                </div>
-            </div>
-        </div>
+    <section>
+      <h2 class="section-title">公開中のツール</h2>
+      <div class="grid">
+        <article class="card">
+          <span class="meta">公開中</span>
+          <h2>役員任期算定シミュレーター</h2>
+          <p>
+            選任日、法人種別、役職、任期設定などから、任期満了の目安や登記対応時期の確認に使うツールです。
+          </p>
+          <a class="btn btn-primary" href="term-calculator.html">ツールを開く</a>
+        </article>
+      </div>
+    </section>
 
-        <div class="actions">
-            <button class="btn btn-navy" onclick="addOfficerRow()">＋ 役員を追加</button>
-            <button class="btn btn-outline" onclick="downloadCSV()">CSV保存</button>
-            <input type="file" id="csvInput" accept=".csv" style="display:none" onchange="importCSV(this)">
-            <button class="btn btn-gold" onclick="document.getElementById('csvInput').click()">CSV読込</button>
-        </div>
+    <section>
+      <h2 class="section-title">今後追加予定</h2>
+      <div class="grid">
+        <article class="card">
+          <span class="meta">準備中</span>
+          <h2>相続関係ツール</h2>
+          <p>
+            相続登記や法定相続情報一覧図の確認補助など、順次追加予定です。
+          </p>
+          <span class="btn btn-secondary">準備中</span>
+        </article>
+      </div>
+    </section>
 
-        <div class="table-responsive">
-            <table id="officer-table">
-                <thead>
-                    <tr>
-                        <th style="width:180px;">役職・氏名</th>
-                        <th style="width:340px;">選任年月日 (和暦)</th>
-                        <th style="width:140px;">任期設定</th>
-                        <th style="width:100px;">選任事由</th>
-                        <th>任期満了予定 (定時総会)</th>
-                        <th style="width:50px;"></th>
-                    </tr>
-                </thead>
-                <tbody id="officer-tbody"></tbody>
-            </table>
-        </div>
-
-        <div class="accordion">
-            <div class="accordion-header" onclick="toggleAccordion(this)">
-                <span>【参考】法人別・役員任期ルール早見表</span>
-                <span>▼</span>
-            </div>
-            <div class="accordion-content">
-                <table class="ref-table">
-                    <thead>
-                        <tr>
-                            <th>法人区分</th>
-                            <th>役員</th>
-                            <th>原則任期</th>
-                            <th>伸長規定</th>
-                            <th>備考</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td rowspan="2"><strong>株式会社</strong></td>
-                            <td>取締役</td><td>2年</td><td>最大10年</td><td>非公開会社のみ伸長可</td>
-                        </tr>
-                        <tr>
-                            <td>監査役</td><td>4年</td><td>最大10年</td><td>非公開会社のみ伸長可</td>
-                        </tr>
-                        <tr>
-                            <td><strong>特例有限</strong></td>
-                            <td>取・監</td><td>なし</td><td>-</td><td>任期の定めなし</td>
-                        </tr>
-                        <tr>
-                            <td><strong>合同会社</strong></td>
-                            <td>社員</td><td>なし</td><td>-</td><td>定款で定めることも可</td>
-                        </tr>
-                        <tr>
-                            <td rowspan="2"><strong>一般社団/財団</strong></td>
-                            <td>理事</td><td>2年</td><td><span style="color:red">不可</span></td><td>短縮は可。総会終結時まで伸長あり</td>
-                        </tr>
-                        <tr>
-                            <td>監事</td><td>4年</td><td><span style="color:red">不可</span></td><td>2年まで短縮可。総会終結時まで伸長あり</td>
-                        </tr>
-                        <tr>
-                            <td rowspan="2"><strong>社会福祉法人</strong></td>
-                            <td>理事</td><td>2年</td><td><span style="color:red">不可</span></td><td>総会伸長なし（カレンダー満了）</td>
-                        </tr>
-                        <tr>
-                            <td>評議員</td><td>4年</td><td><strong>6年</strong></td><td>定款規定が必要</td>
-                        </tr>
-                        <tr>
-                            <td><strong>医療法人</strong></td>
-                            <td>理事</td><td>2年</td><td><span style="color:red">不可</span></td><td>総会伸長なし（カレンダー満了）</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
+    <div class="note">
+      GitHub Pages では、このファイルを <strong>index.html</strong> として配置し、
+      役員任期ツール本体を <strong>yakuin.html</strong> として同じ階層に置けば、
+      <code>https://[ID].github.io/denden-tools/</code> からこのページが開き、
+      そのまま役員任期ツールへ移動できます。
     </div>
 
-<script>
-    var ENTITY_CONFIG = {
-        'kk_non_public': {
-            name: '株式会社（非公開）', hasTerm: true,
-            terms: [
-                { val: 10, label: '10年 (取締役/監査役)' },
-                { val: 2,  label: '2年 (取締役)' },
-                { val: 4,  label: '4年 (監査役)' },
-                { val: 0,  label: 'カスタム' }
-            ],
-            defaultTerm: 10
-        },
-        'kk_public': {
-            name: '株式会社（公開）', hasTerm: true,
-            terms: [
-                { val: 2, label: '2年 (取締役)' },
-                { val: 4, label: '4年 (監査役)' },
-                { val: 1, label: '1年 (短縮)' },
-                { val: 0, label: 'カスタム' }
-            ],
-            defaultTerm: 2
-        },
-        'yugen_godo': { name: '特例有限・合同', hasTerm: false, terms: [], defaultTerm: 0 },
-        'general_assoc': {
-            name: '一般社団・財団', hasTerm: true,
-            terms: [
-                { val: 2, label: '2年 (理事)' },
-                { val: 4, label: '4年 (監事)' },
-                { val: 0, label: 'カスタム' }
-            ],
-            defaultTerm: 2
-        },
-        'social_welfare': {
-            name: '社会福祉法人', hasTerm: true,
-            terms: [
-                { val: 2, label: '2年 (理事)' },
-                { val: 4, label: '4年 (評議員)' },
-                { val: 6, label: '6年 (評議員・伸長)' },
-                { val: 0, label: 'カスタム' }
-            ],
-            defaultTerm: 2
-        },
-        'medical': {
-            name: '医療法人', hasTerm: true,
-            terms: [
-                { val: 2, label: '2年' },
-                { val: 0, label: 'カスタム' }
-            ],
-            defaultTerm: 2
-        }
-    };
-
-    document.addEventListener('DOMContentLoaded', function() {
-        var fySelect = document.getElementById('fy-month');
-        for (var i = 1; i <= 12; i++) {
-            var opt = document.createElement('option');
-            opt.value = i;
-            opt.textContent = i + '月';
-            if (i === 3) opt.selected = true;
-            fySelect.appendChild(opt);
-        }
-        addOfficerRow('代表取締役 田中太郎', '2024-06-25', '10', '重任');
-    });
-
-    // ★ 修正済み：西暦→和暦変換（平成・令和またぎに対応）
-    function toWareki(dateStr) {
-        if (!dateStr) return '';
-        var parts = dateStr.split('-');
-        var y   = parseInt(parts[0]);
-        var m   = parseInt(parts[1]);
-        var day = parseInt(parts[2]);
-
-        var era, wYear;
-
-        // 令和：2019年5月1日以降
-        if (y > 2019 || (y === 2019 && m >= 5)) {
-            era   = '令和';
-            wYear = y - 2018;
-        }
-        // 平成：1989年1月8日〜2019年4月30日
-        else if (y > 1989 || (y === 1989 && (m > 1 || day >= 8))) {
-            era   = '平成';
-            wYear = y - 1988;
-        }
-        // それ以前（昭和以前）はそのまま西暦表示
-        else {
-            return y + '年' + m + '月' + day + '日';
-        }
-
-        var wYearStr = (wYear === 1) ? '元' : String(wYear);
-        return era + wYearStr + '年' + m + '月' + day + '日';
-    }
-
-    // 和暦→ISO変換（平成・令和のみ）
-    function warekiToISO(era, year, month, day) {
-        if (!year || !month || !day) return null;
-        var y = parseInt(year);
-        if (isNaN(y)) return null;
-        var westYear = 0;
-        if (era === '令和') westYear = 2018 + y;
-        else if (era === '平成') westYear = 1988 + y;
-        var m = ('0' + parseInt(month)).slice(-2);
-        var d = ('0' + parseInt(day)).slice(-2);
-        return westYear + '-' + m + '-' + d;
-    }
-
-    // ISO→和暦コンポーネント変換（平成・令和のみ）
-    function isoToWarekiComponents(isoDate) {
-        if (!isoDate) return { era: '令和', year: '', month: 1, day: 1 };
-        var parts = isoDate.split('-');
-        var y   = parseInt(parts[0]);
-        var m   = parseInt(parts[1]);
-        var day = parseInt(parts[2]);
-
-        var era, wYear;
-        if (y > 2019 || (y === 2019 && m >= 5)) {
-            era   = '令和';
-            wYear = y - 2018;
-        } else {
-            era   = '平成';
-            wYear = y - 1988;
-        }
-        return { era: era, year: wYear, month: m, day: day };
-    }
-
-    // ★ 修正済み任期計算関数
-    function calculateAutoAgmDate(electionDateStr, termYears) {
-        if (!electionDateStr) return null;
-        if (termYears === '0' || termYears === '' || isNaN(termYears)) return null;
-
-        var fyMonth   = parseInt(document.getElementById('fy-month').value);
-        var agmMonths = parseInt(document.getElementById('agm-period').value);
-        var years     = parseInt(termYears);
-
-        // ① 任期満了日 = 選任日からX年後の前日
-        var ep = electionDateStr.split('-');
-        var electDate = new Date(parseInt(ep[0]), parseInt(ep[1]) - 1, parseInt(ep[2]));
-        var limitDate = new Date(electDate.getFullYear() + years, electDate.getMonth(), electDate.getDate());
-        limitDate.setDate(limitDate.getDate() - 1);
-
-        var getLastDay = function(y, m) { return new Date(y, m, 0).getDate(); };
-
-        // ② limitDate以前で最も新しい決算期末を求める
-        var fyYear = limitDate.getFullYear();
-        var fyEnd  = new Date(fyYear, fyMonth - 1, getLastDay(fyYear, fyMonth));
-
-        while (fyEnd > limitDate) {
-            fyYear--;
-            fyEnd = new Date(fyYear, fyMonth - 1, getLastDay(fyYear, fyMonth));
-        }
-
-        // ③ 定時総会期限 = 決算期末からagmMonthsヶ月後の月末
-        var agmDeadline = new Date(fyEnd.getFullYear(), fyEnd.getMonth() + 1 + agmMonths, 0);
-
-        var ay = agmDeadline.getFullYear();
-        var am = ('0' + (agmDeadline.getMonth() + 1)).slice(-2);
-        var ad = ('0' + agmDeadline.getDate()).slice(-2);
-        return ay + '-' + am + '-' + ad;
-    }
-
-    function onEntityChanged() {
-        var entityKey = document.getElementById('entity-type').value;
-        var config = ENTITY_CONFIG[entityKey];
-        var rows = document.querySelectorAll('#officer-tbody tr');
-        for (var i = 0; i < rows.length; i++) {
-            var tr = rows[i];
-            var termSelect = tr.querySelector('.inp-term');
-            var currVal = termSelect.value;
-            updateTermDropdown(termSelect, config);
-            if (!config.hasTerm) {
-                termSelect.style.display = 'none';
-            } else {
-                termSelect.style.display = 'block';
-                var exists = false;
-                for (var j = 0; j < termSelect.options.length; j++) {
-                    if (termSelect.options[j].value == currVal) { exists = true; break; }
-                }
-                if (!exists) termSelect.value = config.defaultTerm;
-            }
-            onInputChanged(termSelect, 'auto');
-        }
-    }
-
-    function updateTermDropdown(selectEl, config) {
-        selectEl.innerHTML = '';
-        if (!config.hasTerm) return;
-        for (var i = 0; i < config.terms.length; i++) {
-            var t = config.terms[i];
-            var opt = document.createElement('option');
-            opt.value = t.val;
-            opt.textContent = t.label;
-            selectEl.appendChild(opt);
-        }
-    }
-
-    function addOfficerRow(name, dateISO, termVal, reason, agmOverride) {
-        name        = name        || '';
-        dateISO     = dateISO     || '';
-        reason      = reason      || '就任';
-        agmOverride = agmOverride || '';
-
-        var tbody     = document.getElementById('officer-tbody');
-        var tr        = document.createElement('tr');
-        var entityKey = document.getElementById('entity-type').value;
-        var config    = ENTITY_CONFIG[entityKey];
-        var initialTerm = (termVal !== null && termVal !== undefined) ? termVal : config.defaultTerm;
-        var initials  = dateISO ? isoToWarekiComponents(dateISO) : { era: '令和', year: '', month: 1, day: 1 };
-
-        var monthOpts = '';
-        for (var i = 1; i <= 12; i++) {
-            monthOpts += '<option value="' + i + '"' + (initials.month === i ? ' selected' : '') + '>' + i + '月</option>';
-        }
-        var dayOpts = '';
-        for (var i = 1; i <= 31; i++) {
-            dayOpts += '<option value="' + i + '"' + (initials.day === i ? ' selected' : '') + '>' + i + '日</option>';
-        }
-
-        var agmDateVal = agmOverride;
-        if (!agmDateVal && dateISO && config.hasTerm) {
-            agmDateVal = calculateAutoAgmDate(dateISO, initialTerm) || '';
-        }
-
-        var eraReiwa   = initials.era === '令和' ? ' selected' : '';
-        var eraHeisei  = initials.era === '平成' ? ' selected' : '';
-        var selJuunin  = reason === '就任' ? ' selected' : '';
-        var selJunin   = reason === '重任' ? ' selected' : '';
-        var selHoketsu = reason === '補欠' ? ' selected' : '';
-        var termDisplay   = config.hasTerm ? 'block' : 'none';
-        var noTermDisplay = config.hasTerm ? 'none' : 'block';
-        var subWarnDisplay = reason === '補欠' ? 'block' : 'none';
-
-        tr.innerHTML =
-            '<td><input type="text" class="inp-name" value="' + name + '" placeholder="氏名" style="width:100%"></td>' +
-            '<td>' +
-              '<input type="hidden" class="inp-date-iso" value="' + dateISO + '">' +
-              '<div class="wareki-group">' +
-                '<select class="wareki-era" onchange="onWarekiChanged(this)">' +
-                  '<option value="令和"' + eraReiwa  + '>令和</option>' +
-                  '<option value="平成"' + eraHeisei + '>平成</option>' +
-                '</select>' +
-                '<input type="number" class="wareki-year" value="' + initials.year + '" min="1" onchange="onWarekiChanged(this)">' +
-                '<span class="unit-label">年</span>' +
-                '<select class="wareki-month" onchange="onWarekiChanged(this)">' + monthOpts + '</select>' +
-                '<select class="wareki-day" onchange="onWarekiChanged(this)">' + dayOpts + '</select>' +
-              '</div>' +
-            '</td>' +
-            '<td>' +
-              '<select class="inp-term" onchange="onInputChanged(this,\'auto\')" style="display:' + termDisplay + '"></select>' +
-              '<span class="no-term-msg" style="display:' + noTermDisplay + ';font-size:0.8rem;color:#64748b;">法定任期なし</span>' +
-            '</td>' +
-            '<td>' +
-              '<div style="display:flex;flex-direction:column;">' +
-                '<select class="inp-reason" onchange="onInputChanged(this,\'reason\')">' +
-                  '<option value="就任"' + selJuunin  + '>就任</option>' +
-                  '<option value="重任"' + selJunin   + '>重任</option>' +
-                  '<option value="補欠"' + selHoketsu + '>補欠</option>' +
-                '</select>' +
-                '<span class="substitute-warn" style="display:' + subWarnDisplay + ';">※要残任期間確認</span>' +
-              '</div>' +
-            '</td>' +
-            '<td>' +
-              '<input type="date" class="inp-agm" value="' + agmDateVal + '" onchange="onInputChanged(this,\'manual\')">' +
-              '<div class="agm-display" style="font-size:0.8rem;color:var(--primary-navy);margin-top:4px;"></div>' +
-            '</td>' +
-            '<td style="text-align:center;">' +
-              '<button class="btn btn-outline" style="padding:4px 8px;font-size:0.8rem;color:#ef4444;border-color:#e2e8f0;" onclick="this.closest(\'tr\').remove()">削除</button>' +
-            '</td>';
-
-        tbody.appendChild(tr);
-        var termSelect = tr.querySelector('.inp-term');
-        updateTermDropdown(termSelect, config);
-        termSelect.value = initialTerm;
-        updateRowDisplay(tr);
-    }
-
-    function onWarekiChanged(el) {
-        var tr    = el.closest('tr');
-        var era   = tr.querySelector('.wareki-era').value;
-        var year  = tr.querySelector('.wareki-year').value;
-        var month = tr.querySelector('.wareki-month').value;
-        var day   = tr.querySelector('.wareki-day').value;
-        var iso   = warekiToISO(era, year, month, day);
-        tr.querySelector('.inp-date-iso').value = iso || '';
-        onInputChanged(el, 'auto');
-    }
-
-    function onInputChanged(el, type) {
-        var tr        = el.closest('tr');
-        var entityKey = document.getElementById('entity-type').value;
-        var config    = ENTITY_CONFIG[entityKey];
-        if (type === 'reason' || !type) {
-            var r = tr.querySelector('.inp-reason').value;
-            tr.querySelector('.substitute-warn').style.display = (r === '補欠') ? 'block' : 'none';
-        }
-        if (type === 'auto' && config.hasTerm) {
-            var dateISO = tr.querySelector('.inp-date-iso').value;
-            var term    = tr.querySelector('.inp-term').value;
-            if (dateISO && term != '0') {
-                var newAgm = calculateAutoAgmDate(dateISO, term);
-                if (newAgm) tr.querySelector('.inp-agm').value = newAgm;
-            }
-        }
-        updateRowDisplay(tr);
-    }
-
-    function updateRowDisplay(tr) {
-        var entityKey  = document.getElementById('entity-type').value;
-        var config     = ENTITY_CONFIG[entityKey];
-        var agmVal     = tr.querySelector('.inp-agm').value;
-        var agmDisp    = tr.querySelector('.agm-display');
-        var termMsg    = tr.querySelector('.no-term-msg');
-        var termSelect = tr.querySelector('.inp-term');
-
-        if (!config.hasTerm) {
-            termSelect.style.display = 'none';
-            termMsg.style.display    = 'block';
-            tr.querySelector('.inp-agm').style.display = 'none';
-            agmDisp.textContent = '---';
-            tr.classList.remove('row-expired');
-            return;
-        } else {
-            termSelect.style.display = 'block';
-            termMsg.style.display    = 'none';
-            tr.querySelector('.inp-agm').style.display = 'block';
-        }
-
-        if (!agmVal) { agmDisp.textContent = ''; return; }
-
-        agmDisp.textContent = toWareki(agmVal) + ' (定時総会)';
-        tr.classList.remove('row-expired');
-        var ap = agmVal.split('-');
-        var agmDate = new Date(parseInt(ap[0]), parseInt(ap[1]) - 1, parseInt(ap[2]));
-        if (agmDate < new Date()) {
-            tr.classList.add('row-expired');
-        }
-    }
-
-    function recalculateAll() {
-        var rows = document.querySelectorAll('#officer-tbody tr');
-        for (var i = 0; i < rows.length; i++) {
-            onInputChanged(rows[i].querySelector('.inp-term'), 'auto');
-        }
-    }
-
-    function toggleAccordion(header) {
-        var content = header.nextElementSibling;
-        content.classList.toggle('active');
-        var arrow = header.querySelector('span:last-child');
-        arrow.textContent = content.classList.contains('active') ? '▲' : '▼';
-    }
-
-    function downloadCSV() {
-        var rows = document.querySelectorAll('#officer-tbody tr');
-        var csv  = '\uFEFF氏名,選任日ISO,任期(年),事由,任期満了(総会日)\n';
-        for (var i = 0; i < rows.length; i++) {
-            var tr   = rows[i];
-            var name = tr.querySelector('.inp-name').value;
-            var date = tr.querySelector('.inp-date-iso').value;
-            var term = tr.querySelector('.inp-term').value;
-            var reas = tr.querySelector('.inp-reason').value;
-            var agm  = tr.querySelector('.inp-agm').value;
-            csv += '"' + name + '","' + date + '","' + term + '","' + reas + '","' + agm + '"\n';
-        }
-        var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        var url  = URL.createObjectURL(blob);
-        var link = document.createElement('a');
-        link.href     = url;
-        link.download = 'corporate_terms.csv';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-    }
-
-    function importCSV(input) {
-        var file = input.files[0];
-        if (!file) return;
-        var reader = new FileReader();
-        reader.onload = function(e) {
-            var text = e.target.result;
-            var rows = text.split('\n').map(function(r){ return r.trim(); }).filter(function(r){ return r; });
-            var parseCSVLine = function(line) {
-                var res = [], cur = '', inQ = false;
-                for (var i = 0; i < line.length; i++) {
-                    var c = line[i];
-                    if (c === '"') { inQ = !inQ; continue; }
-                    if (c === ',' && !inQ) { res.push(cur); cur = ''; continue; }
-                    cur += c;
-                }
-                res.push(cur);
-                return res;
-            };
-            document.getElementById('officer-tbody').innerHTML = '';
-            for (var i = 0; i < rows.length; i++) {
-                if (i === 0) continue;
-                var cols = parseCSVLine(rows[i]);
-                if (cols.length < 5) continue;
-                addOfficerRow(cols[0], cols[1], cols[2], cols[3], cols[4]);
-            }
-            input.value = '';
-        };
-        reader.readAsText(file);
-    }
-</script>
+    <footer>
+      © でんでん印
+    </footer>
+  </main>
 </body>
 </html>
